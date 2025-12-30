@@ -5,7 +5,7 @@ create table student (
 	student_id int auto_increment primary key,
     full_name varchar(255) not null,
     email varchar(255) not null unique,
-    date_of_birth date
+    date_of_birth date not null
 );
 
 insert into student (full_name, email, date_of_birth) values 
