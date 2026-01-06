@@ -30,17 +30,16 @@ insert into orders (customer_id, order_date, total_amount) values
 (4, '2025-01-06', 180.00),
 (5, '2025-01-07', 400.00);
 
-select *
-from customers
-where (
-    select sum(total_amount)
-    from orders
-    where orders.customer_id = customers.id
-) = (
-    select max(total_per_customer)
-    from (
-        select sum(total_amount) as total_per_customer
-        from orders
-        group by customer_id
-    ) as t
-);
+select * from customers where id in (
+	select customer_id
+    from orders 
+    group by customer_id
+    having sum(total_amount) = (
+		select max(total) from
+        (
+			select sum(total_amount) as total
+            from orders
+            group by customer_id
+        ) as temp
+    )
+)
