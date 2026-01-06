@@ -8,8 +8,8 @@ create table products(
 );
 
 create table order_items (
-	order_id  int auto_increment primary key,
-    product_id int ,
+	order_id int not null,
+    product_id int not null,
     quantity int,
     foreign key (product_id) references products(product_id)
 );
