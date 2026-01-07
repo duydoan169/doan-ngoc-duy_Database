@@ -90,4 +90,4 @@ select r.room_id, r.room_type, sum((b.check_out - b.check_in) * r.price_per_day)
 select r.room_id, r.room_type, sum((b.check_out - b.check_in) * r.price_per_day) as revenue from rooms r join bookings b on b.room_id = r.room_id group by b.room_id;
 
 -- Tìm những khách đã đặt phòng từ 2 lần trở lên
-select g.guest_id, g.guest_name, count(b.guest_id) from guests g join bookings b on b.guest_id = g.guest_id group by b.guest_id haing count(b.guest_id) > = 2;
+select g.guest_id, g.guest_name, count(b.guest_id) from guests g join bookings b on b.guest_id = g.guest_id group by b.guest_id haing count(b.guest_id) >= 2;
