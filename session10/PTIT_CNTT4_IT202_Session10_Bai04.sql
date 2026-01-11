@@ -1,0 +1,34 @@
+-- bai 4
+use social_network_pro;
+
+explain analyze
+select post_id, content, created_at
+from posts
+where user_id = 1
+and created_at between '2026-01-01' and '2026-12-31';
+
+create index idx_created_at_user_id
+on posts(created_at, user_id);
+
+explain analyze
+select post_id, content, created_at
+from posts
+where user_id = 1
+and created_at between '2026-01-01' and '2026-12-31';
+
+explain analyze
+select user_id, username, email
+from users
+where email = 'an@gmail.com';
+
+create unique index idx_email
+on users(email);
+
+explain analyze
+select user_id, username, email
+from users
+where email = 'an@gmail.com';
+
+drop index idx_created_at_user_id on posts;
+
+drop index idx_email on users;

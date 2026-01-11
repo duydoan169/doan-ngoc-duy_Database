@@ -133,24 +133,22 @@ from categories c
 join products p on p.category_id = c.category_id
 group by c.category_id, c.category_name;
 
+
+-- PHẦN C – TRUY VẤN LỒNG (SUBQUERY):
+
 -- lấy danh sách sản phẩm có giá cao hơn giá trung bình của tất cả sản phẩm
-select *
-from products
-where price > (
-    select avg(price)
-    from products
-);
+select * from products
+where price > (select avg(price) from products);
 
 -- lấy danh sách khách hàng đã từng đặt ít nhất một đơn hàng
-select *
-from customers
-where customer_id in (
-    select customer_id
-    from orders
-);
+select * from customers
+where customer_id
+in (select customer_id from orders);
 
 -- lấy đơn hàng có tổng số lượng sản phẩm lớn nhất
-select order_id
+select * from orders
+where order_id in 
+(select order_id
 from order_items
 group by order_id
 having sum(quantity) = (
@@ -160,27 +158,9 @@ having sum(quantity) = (
         from order_items
         group by order_id
     ) t
-);
+));
 
 -- lấy tên khách hàng đã mua sản phẩm thuộc danh mục có giá trung bình cao nhất
-select distinct c.customer_name
-from customers c
-join orders o on o.customer_id = c.customer_id
-join order_items oi on oi.order_id = o.order_id
-join products p on p.product_id = oi.product_id
-where p.category_id = (
-    select category_id
-    from products
-    group by category_id
-    having avg(price) = (
-        select max(avg_price)
-        from (
-            select avg(price) as avg_price
-            from products
-            group by category_id
-        ) t
-    )
-);
 
 -- từ bảng tạm (subquery), thống kê tổng số lượng sản phẩm đã mua của từng khách hàng
 select customer_id, sum(total_quantity) as total_quantity
@@ -193,9 +173,3 @@ from (
 group by customer_id;
 
 -- viết lại truy vấn lấy sản phẩm có giá cao nhất
-select *
-from products
-where price = (
-    select max(price)
-    from products
-);
