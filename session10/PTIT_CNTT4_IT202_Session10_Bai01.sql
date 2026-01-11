@@ -721,6 +721,7 @@ FROM messages m
 JOIN users u ON m.sender_id = u.user_id;
 SELECT COUNT(*) AS total_notifications FROM notifications;
 
+
 USE social_network_pro;
 
 create or replace view view_users_firstname as
