@@ -1,289 +1,233 @@
-/* =====================================================
-   MINI PROJECT: SOCIAL NETWORK
-   LÀM ĐÚNG THEO YÊU CẦU ĐỀ BÀI
-   SQL CƠ BẢN + HÀM + VIEW + INDEX + PROCEDURE
-===================================================== */
+create database social_network;
+use social_network;
 
-DROP DATABASE IF EXISTS social_network;
-CREATE DATABASE social_network;
-USE social_network;
-
-/* =====================================================
-   BÀI 1. QUẢN LÝ NGƯỜI DÙNG
-===================================================== */
-CREATE TABLE Users (
-    user_id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    password VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+create table users (
+    user_id int primary key auto_increment,
+    username varchar(50) not null unique,
+    password varchar(255) not null,
+    email varchar(100) not null unique,
+    status varchar(20) default 'active',
+    created_at datetime default current_timestamp
 );
 
--- TEST
-INSERT INTO Users(username, password, email) VALUES
-('an','123','an@gmail.com'),
-('binh','123','binh@gmail.com'),
-('cuong','123','cuong@gmail.com');
-
-SELECT * FROM Users;
-
-/* =====================================================
-   BÀI 2. VIEW THÔNG TIN CÔNG KHAI
-===================================================== */
-CREATE VIEW vw_public_users AS
-SELECT user_id, username, created_at
-FROM Users;
-
--- TEST
-SELECT * FROM vw_public_users;
-
-/* =====================================================
-   BÀI 3. INDEX TÌM KIẾM USER
-===================================================== */
-CREATE INDEX idx_username ON Users(username);
-
--- TEST
-SELECT * FROM Users WHERE username = 'an';
-
-/* =====================================================
-   TẠO BẢNG POSTS
-===================================================== */
-CREATE TABLE Posts (
-    post_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
-    content TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES Users(user_id)
+create table posts (
+    post_id int primary key auto_increment,
+    user_id int,
+    content text not null,
+    created_at datetime default current_timestamp,
+    foreign key (user_id) references users(user_id)
 );
 
-/* =====================================================
-   BÀI 4. STORED PROCEDURE ĐĂNG BÀI
-===================================================== */
-DELIMITER //
-
-CREATE PROCEDURE sp_create_post(
-    IN p_user_id INT,
-    IN p_content TEXT
-)
-BEGIN
-    INSERT INTO Posts(user_id, content)
-    VALUES (p_user_id, p_content);
-END //
-
-DELIMITER ;
-
--- TEST (CALL)
-CALL sp_create_post(1, 'Hoc SQL co ban');
-CALL sp_create_post(2, 'Hoc VIEW va INDEX');
-
-SELECT * FROM Posts;
-
-/* =====================================================
-   BÀI 5. VIEW NEWS FEED (7 NGÀY)
-===================================================== */
-CREATE VIEW vw_recent_posts AS
-SELECT *
-FROM Posts
-WHERE created_at >= NOW() - INTERVAL 7 DAY;
-
--- TEST
-SELECT * FROM vw_recent_posts;
-
-/* =====================================================
-   BÀI 6. INDEX TỐI ƯU BÀI VIẾT
-===================================================== */
-CREATE INDEX idx_post_user ON Posts(user_id);
-CREATE INDEX idx_post_user_time ON Posts(user_id, created_at);
-
--- TEST
-SELECT * FROM Posts
-WHERE user_id = 1
-ORDER BY created_at DESC;
-
-/* =====================================================
-   BÀI 7. PROCEDURE THỐNG KÊ BÀI VIẾT
-===================================================== */
-DELIMITER //
-
-CREATE PROCEDURE sp_count_posts(
-    IN p_user_id INT
-)
-BEGIN
-    SELECT COUNT(*) AS total_posts
-    FROM Posts
-    WHERE user_id = p_user_id;
-END //
-
-DELIMITER ;
-
--- TEST (CALL)
-CALL sp_count_posts(1);
-
-/* =====================================================
-   BÀI 8. VIEW WITH CHECK OPTION
-===================================================== */
-CREATE VIEW vw_active_users AS
-SELECT *
-FROM Users
-WHERE created_at IS NOT NULL
-WITH CHECK OPTION;
-
--- TEST
-INSERT INTO vw_active_users(username, password, email)
-VALUES ('dung','123','dung@gmail.com');
-
-/* =====================================================
-   TẠO BẢNG FRIENDS
-===================================================== */
-CREATE TABLE Friends (
-    user_id INT,
-    friend_id INT,
-    status VARCHAR(20),
-    FOREIGN KEY (user_id) REFERENCES Users(user_id),
-    FOREIGN KEY (friend_id) REFERENCES Users(user_id)
+create table comments (
+    comment_id int primary key auto_increment,
+    post_id int,
+    user_id int,
+    content text not null,
+    created_at datetime default current_timestamp,
+    foreign key (post_id) references posts(post_id),
+    foreign key (user_id) references users(user_id)
 );
 
-/* =====================================================
-   BÀI 9. PROCEDURE KẾT BẠN
-===================================================== */
-DELIMITER //
-
-CREATE PROCEDURE sp_add_friend(
-    IN p_user_id INT,
-    IN p_friend_id INT
-)
-BEGIN
-    INSERT INTO Friends(user_id, friend_id, status)
-    VALUES (p_user_id, p_friend_id, 'pending');
-END //
-
-DELIMITER ;
-
--- TEST (CALL)
-CALL sp_add_friend(1, 2);
-SELECT * FROM Friends;
-
-/* =====================================================
-   BÀI 10. PROCEDURE GỢI Ý BẠN BÈ
-===================================================== */
-DELIMITER //
-
-CREATE PROCEDURE sp_suggest_friends(
-    IN p_user_id INT
-)
-BEGIN
-    SELECT user_id, username
-    FROM Users
-    WHERE user_id <> p_user_id;
-END //
-
-DELIMITER ;
-
--- TEST (CALL)
-CALL sp_suggest_friends(1);
-
-/* =====================================================
-   TẠO BẢNG LIKES
-===================================================== */
-CREATE TABLE Likes (
-    user_id INT,
-    post_id INT,
-    FOREIGN KEY (user_id) REFERENCES Users(user_id),
-    FOREIGN KEY (post_id) REFERENCES Posts(post_id)
+create table friends (
+    user_id int,
+    friend_id int,
+    status varchar(20) check (status in ('pending','accepted')),
+    foreign key (user_id) references users(user_id),
+    foreign key (friend_id) references users(user_id)
 );
 
-/* =====================================================
-   BÀI 11. VIEW TOP BÀI VIẾT
-===================================================== */
-INSERT INTO Likes VALUES
-(1,1),(2,1),(3,1),(2,2);
-
-CREATE VIEW vw_top_posts AS
-SELECT p.post_id, p.content, COUNT(l.user_id) AS total_likes
-FROM Posts p
-LEFT JOIN Likes l ON p.post_id = l.post_id
-GROUP BY p.post_id
-ORDER BY total_likes DESC
-LIMIT 5;
-
--- TEST
-SELECT * FROM vw_top_posts;
-
-/* =====================================================
-   TẠO BẢNG COMMENTS
-===================================================== */
-CREATE TABLE Comments (
-    comment_id INT AUTO_INCREMENT PRIMARY KEY,
-    post_id INT,
-    user_id INT,
-    content TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (post_id) REFERENCES Posts(post_id),
-    FOREIGN KEY (user_id) REFERENCES Users(user_id)
+create table likes (
+    user_id int,
+    post_id int,
+    foreign key (user_id) references users(user_id),
+    foreign key (post_id) references posts(post_id)
 );
 
-/* =====================================================
-   BÀI 12. PROCEDURE THÊM BÌNH LUẬN
-===================================================== */
-DELIMITER //
+-- Bài 1. Quản lý người dùng
+insert into users (username, password, email) 
+values ('ngocduy', '123456', 'duy@example.com');
+insert into users (username, password, email) 
+values ('lananh', 'abcdef', 'lananh@example.com');
+select * from users;
 
-CREATE PROCEDURE sp_add_comment(
-    IN p_user_id INT,
-    IN p_post_id INT,
-    IN p_content TEXT
+-- Bài 2. Hiển thị thông tin công khai bằng VIEW
+create view vw_public_users as
+select user_id, username, created_at
+from users;
+select * from vw_public_users;
+select user_id, username, created_at from users;
+
+-- Bài 3. Tối ưu tìm kiếm người dùng bằng INDEX
+create index idx_username on users(username);
+select * from users where username = 'ngocduy';
+
+-- Bài 4. Quản lý bài viết bằng Stored Procedure
+delimiter $$
+create procedure sp_create_post(
+    in p_user_id int,
+    in p_content text
 )
-BEGIN
-    INSERT INTO Comments(user_id, post_id, content)
-    VALUES (p_user_id, p_post_id, p_content);
-END //
+begin
+    if exists (select 1 from users where user_id = p_user_id) then
+        insert into posts(user_id, content) values(p_user_id, p_content);
+    end if;
+end $$
+delimiter ;
+call sp_create_post(1, 'abcdefg');
+select * from posts;
 
-DELIMITER ;
+-- Bài 5. Hiển thị News Feed bằng VIEW
+create view vw_recent_posts as
+select post_id, user_id, content, created_at
+from posts
+where created_at >= current_date - interval 7 day;
+select * from vw_recent_posts;
 
--- TEST (CALL)
-CALL sp_add_comment(2, 1, 'Bai viet hay');
-SELECT * FROM Comments;
+-- Bài 6. Tối ưu truy vấn bài viết
+create index idx_posts_user_id on posts(user_id);
+create index idx_posts_user_created on posts(user_id, created_at);
+select * from posts
+where user_id = 1
+order by created_at desc;
 
-/* =====================================================
-   BÀI 13. PROCEDURE LIKE BÀI VIẾT
-===================================================== */
-DELIMITER //
-
-CREATE PROCEDURE sp_like_post(
-    IN p_user_id INT,
-    IN p_post_id INT
+-- Bài 7. Thống kê hoạt động bằng Stored Procedure
+delimiter $$
+create procedure sp_count_posts(
+    in p_user_id int,
+    out p_total int
 )
-BEGIN
-    INSERT INTO Likes(user_id, post_id)
-    VALUES (p_user_id, p_post_id);
-END //
+begin
+    select count(*) into p_total
+    from posts
+    where user_id = p_user_id;
+end $$
+delimiter ;
+call sp_count_posts(1, @total);
+select @total;
 
-DELIMITER ;
+-- Bài 8. Kiểm soát dữ liệu bằng View WITH CHECK OPTION
+create view vw_active_users as
+select user_id, username, password, email, status, created_at
+from users
+where status = 'active'
+with check option;
+insert into vw_active_users(username, password, email, status)
+values ('phuong', '123456', 'phuong@example.com', 'active');
+update vw_active_users
+set username = 'phuongupdated'
+where username = 'phuong';
 
--- TEST (CALL)
-CALL sp_like_post(3, 2);
-SELECT * FROM Likes;
-
-/* =====================================================
-   BÀI 14. PROCEDURE TÌM KIẾM
-===================================================== */
-DELIMITER //
-
-CREATE PROCEDURE sp_search_social(
-    IN p_option INT,
-    IN p_keyword VARCHAR(100)
+-- Bài 9. Quản lý kết bạn bằng Stored Procedure
+delimiter $$
+create procedure sp_add_friend(
+    in p_user_id int,
+    in p_friend_id int
 )
-BEGIN
-    IF p_option = 1 THEN
-        SELECT * FROM Users
-        WHERE username LIKE CONCAT('%', p_keyword, '%');
-    ELSE
-        SELECT * FROM Posts
-        WHERE content LIKE CONCAT('%', p_keyword, '%');
-    END IF;
-END //
+begin
+    if p_user_id = p_friend_id then
+        select 'khong the ket ban voi chinh minh';
+    else
+        insert into friends(user_id, friend_id, status)
+        values(p_user_id, p_friend_id, 'pending');
+    end if;
+end $$
+delimiter ;
+call sp_add_friend(1, 2);
 
-DELIMITER ;
+-- Bài 10. Gợi ý bạn bè bằng Procedure nâng cao
+delimiter $$
+create procedure sp_suggest_friends(
+    in p_user_id int,
+    inout p_limit int
+)
+begin
+    declare counter int default 0;
+    declare suggested_id int;
+    while counter < p_limit do
+        select user_id into suggested_id
+        from users
+        where user_id <> p_user_id
+        limit counter, 1;
+        select suggested_id;
+        set counter = counter + 1;
+    end while;
+end $$
+delimiter ;
+set @limit = 3;
+call sp_suggest_friends(1, @limit);
 
--- TEST (CALL)
-CALL sp_search_social(1, 'an');
-CALL sp_search_social(2, 'SQL');
+-- Bài 11. Thống kê tương tác nâng cao
+create index idx_likes_post_id on likes(post_id);
+create view vw_top_posts as
+select post_id, count(*) as total_likes
+from likes
+group by post_id
+order by total_likes desc
+limit 5;
+select * from vw_top_posts;
+
+-- Bài 12. Quản lý bình luận
+delimiter $$
+create procedure sp_add_comment(
+    in p_user_id int,
+    in p_post_id int,
+    in p_content text
+)
+begin
+    declare user_exist int;
+    declare post_exist int;
+    select count(*) into user_exist from users where user_id = p_user_id;
+    select count(*) into post_exist from posts where post_id = p_post_id;
+    if user_exist = 1 and post_exist = 1 then
+        insert into comments(user_id, post_id, content) values(p_user_id, p_post_id, p_content);
+    else
+        select 'user hoac post khong ton tai';
+    end if;
+end $$
+delimiter ;
+call sp_add_comment(1, 1, 'binh luan moi');
+create view vw_post_comments as
+select c.content, u.username, c.created_at
+from comments c
+join users u on c.user_id = u.user_id;
+select * from vw_post_comments;
+
+-- Bài 13. Quản lý lượt thích
+delimiter $$
+create procedure sp_like_post(
+    in p_user_id int,
+    in p_post_id int
+)
+begin
+    if not exists (select 1 from likes where user_id = p_user_id and post_id = p_post_id) then
+        insert into likes(user_id, post_id) values(p_user_id, p_post_id);
+    else
+        select 'da thich bai viet nay';
+    end if;
+end $$
+delimiter ;
+call sp_like_post(1, 1);
+create view vw_post_likes as
+select post_id, count(*) as total_likes
+from likes
+group by post_id;
+select * from vw_post_likes;
+
+-- Bài 14. Tìm kiếm người dùng & bài viết
+delimiter $$
+create procedure sp_search_social(
+    in p_option int,
+    in p_keyword varchar(100)
+)
+begin
+    if p_option = 1 then
+        select * from users where username like concat('%', p_keyword, '%');
+    elseif p_option = 2 then
+        select * from posts where content like concat('%', p_keyword, '%');
+    else
+        select 'option khong hop le';
+    end if;
+end $$
+delimiter ;
+call sp_search_social(1, 'an');
+call sp_search_social(2, 'database');
