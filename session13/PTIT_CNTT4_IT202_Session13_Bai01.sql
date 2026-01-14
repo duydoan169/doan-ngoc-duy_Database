@@ -62,4 +62,4 @@ delete from posts where post_id = 2;
 
 SELECT * FROM users;
 
-drop database bai01;
+-- drop database bai01;
