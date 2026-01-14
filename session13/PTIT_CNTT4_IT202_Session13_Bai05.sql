@@ -34,7 +34,9 @@ end $$
 delimiter ;
 
 call add_user('nguyen_van_a', 'a@gmail.com', '2025-01-15');
+
 call add_user('nguyen van !@#$%^&*()', '!@#$%^&*()@gmailcom', '2025-01-15');
+
 call add_user('nguyenvanb', 'email', '2025-01-15');
 
 select * from users;
