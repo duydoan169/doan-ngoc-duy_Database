@@ -96,7 +96,7 @@ create procedure sp_count_posts(
     in p_user_id int,
     out p_total int
 )
-begin
+begingita dd 
     select count(*) into p_total
     from posts
     where user_id = p_user_id;

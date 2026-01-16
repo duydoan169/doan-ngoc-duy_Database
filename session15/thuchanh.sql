@@ -192,18 +192,8 @@ CREATE PROCEDURE sp_remove_friend(
 )
 BEGIN
     START TRANSACTION;
-    IF NOT EXISTS (
-        SELECT 1 FROM Friends
-        WHERE user_id = p_user1 AND friend_id = p_user2
-    ) THEN
-        ROLLBACK;
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Không tồn tại mối quan hệ bạn bè';
-    END IF;
-
     DELETE FROM Friends WHERE user_id = p_user1 AND friend_id = p_user2;
     DELETE FROM Friends WHERE user_id = p_user2 AND friend_id = p_user1;
-
     COMMIT;
 END;
 //
@@ -242,22 +232,11 @@ DELIMITER //
 CREATE PROCEDURE sp_delete_user(IN p_user_id INT)
 BEGIN
     START TRANSACTION;
-
-    IF NOT EXISTS (
-        SELECT 1 FROM Users WHERE user_id = p_user_id
-    ) THEN
-        ROLLBACK;
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Người dùng không tồn tại';
-    END IF;
-
     DELETE FROM Users WHERE user_id = p_user_id;
-
     COMMIT;
 END;
 //
 DELIMITER ;
-
 
 /* =========================================================
    DEMO / TEST TẤT CẢ CÁC BÀI

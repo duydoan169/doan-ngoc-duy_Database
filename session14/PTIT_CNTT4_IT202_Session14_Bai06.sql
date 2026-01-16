@@ -44,7 +44,7 @@ begin
 
 	insert into friends (user_id, friend_id)
 	select from_user_id, to_user_id
-	from friend_requests
+	from friend_requests 
 	where request_id = p_request_id;
 
 	insert into friends (user_id, friend_id)
