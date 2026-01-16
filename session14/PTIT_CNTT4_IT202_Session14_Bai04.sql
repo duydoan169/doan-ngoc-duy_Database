@@ -1,5 +1,4 @@
 -- bai 4
--- bai 5
 use social_network;
 
 create table comments (
